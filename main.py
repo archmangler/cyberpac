@@ -1,8 +1,10 @@
 from tkinter import *
 from random import randint
 
-cell_size = 20          #pixels
-ms = 40                 #rows and columns
+cell_size = 30         #pixels
+ms = 30                 #rows and columns
+pacman_size=20
+
 visited_cells = []
 walls = []
 revisited_cells = []
@@ -10,11 +12,15 @@ revisited_cells = []
 # creates a list with 50 x 50 "w" items
 map = [['w' for _ in range(ms)] for _ in range(ms)]
 
-def draw_pac(row,col):
+global xa, ya
+xa = randint(1, ms) + cell_size
+ya = randint(1, ms) + cell_size
+
+def draw_pac(row,col,color):
     print("placing pac: x:y",row,col)
     x = col * cell_size
     y = row * cell_size
-    ffs.create_oval(x,y,x+10,y+10,fill="green")
+    ffs.create_oval(x,y,x+10,y+10,fill=color)
 
 def create():
     "Create a rectangle with draw function (below) with random color"
@@ -33,7 +39,7 @@ def place_pacs():
             if map[row][col] == 'P':
                 color = 'White'
                 if row%2 == 0 and col%2 == 0:
-                    draw_pac(row, col)
+                    draw_pac(row, col,"green")
 
 def draw(row, col, color):
     x1 = col * cell_size
@@ -88,8 +94,10 @@ x1 = ccr * 12
 y1 = ccc * 12
 
 print(scr, scc)
-
 print(ccr, ccc)
+
+xa = scr + randint(1, ms) * cell_size
+ya = scc + randint(1, ms) * cell_size
 
 map[ccr][ccc] = 'P'
 
@@ -138,7 +146,7 @@ ecc = revisited_cells[e][1]
 #colour of the prize pac
 pac_color = 'red'
 
-draw(ecr, ecc, pac_color)
+draw_pac(ecr, ecc, pac_color)
 
 # print(revisited_cells)
 
@@ -146,19 +154,50 @@ def draw_rect():
     ffs.create_rectangle((x1, y1, x1 + 12, y1 + 12), fill="green")
 
 def del_rect():
-    ffs.create_rectangle((x1, y1, x1 + 20, y1 + 20), fill="white")
+    ffs.create_rectangle((x1, y1, x1 + cell_size, y1 + cell_size), fill="white")
+
+def locate_agent(xa,ya):
+    #global xa,ya
+    col = w = xa//cell_size
+    row = h = ya//cell_size
+    print("agent is at: ", row, col)
+    print("block color left: ",map[row][col-1])
+
+    if map[row][col-1] == 'w':
+        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
+        ya = row*cell_size - cell_size
+        print("move agent to: ",xa,ya,map[row][col-1])
+        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
+    elif map[row][col+1] == 'w':
+        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
+        ya = row*cell_size + cell_size
+        print("move agent to: ", xa, ya, map[row][col + 1])
+        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
+    else:
+        print("agent cannot go up or down")
+
+    if map[row-1][col] == 'w':
+        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
+        xa = col*cell_size - cell_size
+        print("move agent to: ", xa, ya, map[row-1][col])
+        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
+    elif map[row+1][col] == 'w':
+        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
+        xa = col*cell_size + cell_size
+        print("move agent to: ", xa, ya, map[row+1][col])
+        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
+    else:
+        print("agent cannot go left or right")
+    return xa,ya
 
 def move(event):
     global x1, y1
+    global xa, ya
     print("keypress event: ",event.char)
-
     del_rect()
-
     col = w = x1//cell_size
     row = h = y1//cell_size
-
-    print("before", map[row][col])
-
+    #print("before", map[row][col])
     if event.char == "a":
         if map[row][col - 1] == "P":
             x1 -= cell_size
@@ -171,17 +210,14 @@ def move(event):
     elif event.char == "s":
         if map[row + 1][col] == "P":
             y1 += cell_size
-
-    #draw_rect()
-
     # try to draw a little round pacman
-    cyberpac = ffs.create_oval(x1, y1, x1 + 15, y1 + 15,fill="yellow")
-
+    cyberpac = ffs.create_oval(x1, y1, x1 + pacman_size, y1 + pacman_size,fill="yellow")
     col = w = x1//cell_size
     row = h = y1//cell_size
-    print(w, h)
-    print("after", map[row][col])
+    #print(w, h)
+    #print("after", map[row][col])
+
+    xa,ya = locate_agent(xa,ya)
 
 window.bind("<Key>", move)
-
 window.mainloop()
