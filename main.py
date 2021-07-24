@@ -1,18 +1,20 @@
 from tkinter import *
 from random import randint
 
-cell_size = 20  #pixels
-
-ms = 40         #rows and columns
-
+cell_size = 20          #pixels
+ms = 40                 #rows and columns
 visited_cells = []
-
 walls = []
-
 revisited_cells = []
 
 # creates a list with 50 x 50 "w" items
 map = [['w' for _ in range(ms)] for _ in range(ms)]
+
+def draw_pac(row,col):
+    print("placing pac: x:y",row,col)
+    x = col * cell_size
+    y = row * cell_size
+    ffs.create_oval(x,y,x+10,y+10,fill="green")
 
 def create():
     "Create a rectangle with draw function (below) with random color"
@@ -23,6 +25,15 @@ def create():
             elif map[row][col] == 'w':
                 color = 'black'
             draw(row, col, color)
+
+#place the pac points
+def place_pacs():
+    for row in range(ms):
+        for col in range(ms):
+            if map[row][col] == 'P':
+                color = 'White'
+                if row%2 == 0 and col%2 == 0:
+                    draw_pac(row, col)
 
 def draw(row, col, color):
     x1 = col * cell_size
@@ -104,15 +115,12 @@ while loop:
             loop = 0
 
 window = Tk()
-
 window.title('!! CYBER PAC !!')
 canvas_side = ms*cell_size
-
 ffs = Canvas(window, width = canvas_side, height = canvas_side, bg = 'grey')
-
 ffs.pack(pady=20,padx=20)
-
 create()
+place_pacs()
 
 y1 = scr * cell_size
 x1 = scc * cell_size
@@ -127,9 +135,10 @@ e = randint(1, len(revisited_cells))-1
 ecr = revisited_cells[e][0]
 ecc = revisited_cells[e][1]
 
-end_color = 'red'
+#colour of the prize pac
+pac_color = 'red'
 
-draw(ecr, ecc, end_color)
+draw(ecr, ecc, pac_color)
 
 # print(revisited_cells)
 
