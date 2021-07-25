@@ -1,9 +1,12 @@
+import tkinter
 from tkinter import *
 from random import randint
 import random as rnd
+from playsound import playsound
 
+debug = 0
 cell_size = 20         #pixels
-ms = 20                 #rows and columns
+ms = 30                 #rows and columns
 pacman_size=20
 
 visited_cells = []
@@ -13,6 +16,7 @@ revisited_cells = []
 # creates a list with 50 x 50 "w" items
 map = [['w' for _ in range(ms)] for _ in range(ms)]
 
+#one pair for each enemy agent
 global xa, ya, xb, yb
 
 xa = randint(1, ms) + cell_size
@@ -31,7 +35,7 @@ def create():
     for row in range(ms):
         for col in range(ms):
             if map[row][col] == 'P':
-                color = 'White'
+                color = 'Green'
             elif map[row][col] == 'w':
                 color = 'black'
             draw(row, col, color)
@@ -41,9 +45,9 @@ def place_pacs():
     for row in range(ms):
         for col in range(ms):
             if map[row][col] == 'P':
-                color = 'White'
+                color = 'Green'
                 if row%2 == 0 and col%2 == 0:
-                    draw_pac(row, col,"green")
+                    draw_pac(row, col,"blue")
 
 def draw(row, col, color):
     x1 = col * cell_size
@@ -155,53 +159,75 @@ draw_pac(ecr, ecc, pac_color)
 # print(revisited_cells)
 
 def draw_rect():
-    ffs.create_rectangle((x1, y1, x1 + 12, y1 + 12), fill="green")
+    ffs.create_rectangle((x1, y1, x1 + 12, y1 + 12), fill="Green")
 
 def del_rect():
-    ffs.create_rectangle((x1, y1, x1 + cell_size, y1 + cell_size), fill="white")
+    ffs.create_rectangle((x1, y1, x1 + cell_size, y1 + cell_size), fill="Green")
 
 def move_agent(xn,yn):
     xnPrev=xn
     ynPrev=yn
 
+    #rollover to prevent list out of range errors
+    #and add a nice teleporting effect
+    if xn < 0:
+        xn = 5
+        col = w = xn // cell_size
+    if yn < 0:
+        yn = 5
+        row = h = yn // cell_size
+
     options = ["a","d","w","s"]
 
     col = w = xn//cell_size
     row = h = yn//cell_size
+    if debug == 1:
+        print("agent is at: ", xn, yn)
+        print("cyberpac is at: ",x1,y1)
+    if abs(xn - x1) < 40 and abs(yn - y1) < 40:
+        print("AGENT COLLISION WITH CYBERPAC!!!")
+    else:
+        print("safe")
+    #print("block color left: ",map[row][col-1])
+    #enemy agent moves 4 times
+    for turn in range(len(options)):
+        xnPrev=xn
+        ynPrev=yn
+        rand_index=rnd.randint(0, len(options) - 1)
+        option=options[rand_index]
+        if debug == 1:
+            print("enemy agent to: ", option)
+        if option == "a":
+            if map[row][col - 1] == "P":
+                xn -= cell_size
+        elif option == "d":
+            if map[row][col + 1] == "P":
+                xn += cell_size
+        elif option == "w":
+            if map[row - 1][col] == "P":
+                yn -= cell_size
+        elif option == "s":
+            if map[row + 1][col] == "P":
+                yn += cell_size
+        #erase previous location (visual trick)
+        ffs.create_rectangle((xnPrev, ynPrev, xnPrev + cell_size, ynPrev + cell_size), fill="Green")
+        #draw the agent
+        cyberagent = ffs.create_oval(xn, yn, xn + pacman_size, yn + pacman_size, fill="red")
 
-    print("agent is at: ", row, col)
-    print("block color left: ",map[row][col-1])
-
-    rand_index=rnd.randint(0, len(options) - 1)
-    option=options[rand_index]
-    print("enemy agent to: ", option)
-    if option == "a":
-        if map[row][col - 1] == "P":
-            xn -= cell_size
-    elif option == "d":
-        if map[row][col + 1] == "P":
-            xn += cell_size
-    elif option == "w":
-        if map[row - 1][col] == "P":
-            yn -= cell_size
-    elif option == "s":
-        if map[row + 1][col] == "P":
-            yn += cell_size
-    #erase previous location (visual trick)
-    ffs.create_rectangle((xnPrev, ynPrev, xnPrev + cell_size, ynPrev + cell_size), fill="white")
-    #draw the agent
-    cyberagent = ffs.create_oval(xn, yn, xn + pacman_size, yn + pacman_size, fill="red")
     return xn,yn
 
 def move(event):
     global x1, y1
     global xa, ya
     global xb, yb
-    print("keypress event: ",event.char)
+    if debug == 1:
+        print("keypress event: ",event.char)
     del_rect()
     col = w = x1//cell_size
     row = h = y1//cell_size
-    #print("before", map[row][col])
+
+    if debug == 1:
+        print("before", map[row][col])
     if event.char == "a":
         if map[row][col - 1] == "P":
             x1 -= cell_size
@@ -218,7 +244,7 @@ def move(event):
     cyberpac = ffs.create_oval(x1, y1, x1 + pacman_size, y1 + pacman_size,fill="yellow")
     col = w = x1//cell_size
     row = h = y1//cell_size
-    #print(w, h)
+
     #print("after", map[row][col])
 
     xa,ya = move_agent(xa,ya)
