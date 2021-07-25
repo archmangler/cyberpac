@@ -1,8 +1,9 @@
 from tkinter import *
 from random import randint
+import random as rnd
 
-cell_size = 30         #pixels
-ms = 30                 #rows and columns
+cell_size = 20         #pixels
+ms = 20                 #rows and columns
 pacman_size=20
 
 visited_cells = []
@@ -12,9 +13,12 @@ revisited_cells = []
 # creates a list with 50 x 50 "w" items
 map = [['w' for _ in range(ms)] for _ in range(ms)]
 
-global xa, ya
+global xa, ya, xb, yb
+
 xa = randint(1, ms) + cell_size
 ya = randint(1, ms) + cell_size
+xb = randint(1, ms) + cell_size
+yb = randint(1, ms) + cell_size
 
 def draw_pac(row,col,color):
     print("placing pac: x:y",row,col)
@@ -156,43 +160,43 @@ def draw_rect():
 def del_rect():
     ffs.create_rectangle((x1, y1, x1 + cell_size, y1 + cell_size), fill="white")
 
-def locate_agent(xa,ya):
-    #global xa,ya
-    col = w = xa//cell_size
-    row = h = ya//cell_size
+def move_agent(xn,yn):
+    xnPrev=xn
+    ynPrev=yn
+
+    options = ["a","d","w","s"]
+
+    col = w = xn//cell_size
+    row = h = yn//cell_size
+
     print("agent is at: ", row, col)
     print("block color left: ",map[row][col-1])
 
-    if map[row][col-1] == 'w':
-        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
-        ya = row*cell_size - cell_size
-        print("move agent to: ",xa,ya,map[row][col-1])
-        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
-    elif map[row][col+1] == 'w':
-        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
-        ya = row*cell_size + cell_size
-        print("move agent to: ", xa, ya, map[row][col + 1])
-        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
-    else:
-        print("agent cannot go up or down")
-
-    if map[row-1][col] == 'w':
-        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
-        xa = col*cell_size - cell_size
-        print("move agent to: ", xa, ya, map[row-1][col])
-        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
-    elif map[row+1][col] == 'w':
-        ffs.create_rectangle((xa, ya, xa + cell_size, ya + cell_size), fill="white")
-        xa = col*cell_size + cell_size
-        print("move agent to: ", xa, ya, map[row+1][col])
-        cyberagent = ffs.create_oval(xa, ya, xa + pacman_size, ya + pacman_size, fill="red")
-    else:
-        print("agent cannot go left or right")
-    return xa,ya
+    rand_index=rnd.randint(0, len(options) - 1)
+    option=options[rand_index]
+    print("enemy agent to: ", option)
+    if option == "a":
+        if map[row][col - 1] == "P":
+            xn -= cell_size
+    elif option == "d":
+        if map[row][col + 1] == "P":
+            xn += cell_size
+    elif option == "w":
+        if map[row - 1][col] == "P":
+            yn -= cell_size
+    elif option == "s":
+        if map[row + 1][col] == "P":
+            yn += cell_size
+    #erase previous location (visual trick)
+    ffs.create_rectangle((xnPrev, ynPrev, xnPrev + cell_size, ynPrev + cell_size), fill="white")
+    #draw the agent
+    cyberagent = ffs.create_oval(xn, yn, xn + pacman_size, yn + pacman_size, fill="red")
+    return xn,yn
 
 def move(event):
     global x1, y1
     global xa, ya
+    global xb, yb
     print("keypress event: ",event.char)
     del_rect()
     col = w = x1//cell_size
@@ -217,7 +221,8 @@ def move(event):
     #print(w, h)
     #print("after", map[row][col])
 
-    xa,ya = locate_agent(xa,ya)
+    xa,ya = move_agent(xa,ya)
+    xb,yb = move_agent(xb,yb)
 
 window.bind("<Key>", move)
 window.mainloop()
