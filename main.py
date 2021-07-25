@@ -3,6 +3,8 @@ from tkinter import *
 from random import randint
 import random as rnd
 from playsound import playsound
+import os
+
 
 debug = 0
 cell_size = 20         #pixels
@@ -48,6 +50,10 @@ def place_pacs():
                 color = 'Green'
                 if row%2 == 0 and col%2 == 0:
                     draw_pac(row, col,"blue")
+
+#play various beeping noises
+def beep(soundFile):
+    playsound(soundFile)
 
 def draw(row, col, color):
     x1 = col * cell_size
@@ -186,6 +192,7 @@ def move_agent(xn,yn):
         print("cyberpac is at: ",x1,y1)
     if abs(xn - x1) < 40 and abs(yn - y1) < 40:
         print("AGENT COLLISION WITH CYBERPAC!!!")
+        os.system('say "AGENT COLLISION WITH CYBERPAC!!!"')
     else:
         print("safe")
     #print("block color left: ",map[row][col-1])
