@@ -5,11 +5,11 @@ import random as rnd
 from playsound import playsound
 import os
 
-
 debug = 0
-cell_size = 20         #pixels
+cell_size = 20          #pixels
 ms = 30                 #rows and columns
 pacman_size=20
+agent_turns = 8         #number of blocks agent gets to try for ever one block of cyberpac move
 
 visited_cells = []
 walls = []
@@ -17,6 +17,10 @@ revisited_cells = []
 
 # creates a list with 50 x 50 "w" items
 map = [['w' for _ in range(ms)] for _ in range(ms)]
+
+#array of tuples to keep track of how many times
+#the agent has been stuck at this position
+stuck_log = []
 
 #one pair for each enemy agent
 global xa, ya, xb, yb
@@ -61,6 +65,35 @@ def draw(row, col, color):
     x2 = x1 + cell_size
     y2 = y1 + cell_size
     ffs.create_rectangle(x1, y1, x2, y2, fill=color)
+
+def check_agent_neighbours(ccr, ccc):
+    neighbours = [[
+        ccr,
+        ccc - 1,
+        ccr - 1,
+        ccc - 2,
+        ccr,
+        ccc - 2,
+        ccr + 1,
+        ccc - 2,
+        ccr - 1,
+        ccc - 1,
+        ccr + 1,
+        ccc - 1
+    ],
+
+# left
+                [ccr, ccc + 1, ccr - 1, ccc + 2, ccr, ccc + 2, ccr + 1, ccc + 2, ccr - 1, ccc + 1, ccr + 1, ccc + 1], #right
+                [ccr - 1, ccc, ccr - 2, ccc - 1, ccr - 2, ccc, ccr - 2, ccc + 1, ccr - 1, ccc - 1, ccr - 1, ccc + 1], #top
+                [ccr + 1, ccc, ccr + 2, ccc - 1, ccr + 2, ccc, ccr + 2, ccc + 1, ccr + 1, ccc-1, ccr + 1, ccc + 1]] #bottom
+    visitable_agent_neighbours = []
+    for i in neighbours:                                                                        #find neighbours to visit
+        if i[0] > 0 and i[0] < (ms-1) and i[1] > 0 and i[1] < (ms-1):
+            if map[i[2]][i[3]] == 'P' or map[i[4]][i[5]] == 'P' or map[i[6]][i[7]] == 'P' or map[i[8]][i[9]] == 'P' or map[i[10]][i[11]] == 'P':
+                walls.append(i[0:2])
+            else:
+                visitable_neighbours.append(i[0:2])
+    return visitable_agent_neighbours
 
 def check_neighbours(ccr, ccc):
     neighbours = [[
@@ -121,6 +154,7 @@ while loop:
 
     visitable_neighbours = check_neighbours(ccr, ccc)
 
+
     if len(visitable_neighbours) != 0:
         d = randint(1, len(visitable_neighbours))-1
         ncr, ncc = visitable_neighbours[d]
@@ -173,6 +207,7 @@ def del_rect():
 def move_agent(xn,yn):
     xnPrev=xn
     ynPrev=yn
+    global stuck_log
 
     #rollover to prevent list out of range errors
     #and add a nice teleporting effect
@@ -182,28 +217,35 @@ def move_agent(xn,yn):
     if yn < 0:
         yn = 5
         row = h = yn // cell_size
-
-    options = ["a","d","w","s"]
-
     col = w = xn//cell_size
     row = h = yn//cell_size
+
+    #get visitable neighbours for the agent
+    #visitable_agent_neighbours = check_agent_neighbours(row, col)
+    #print("visitable agent neighbours: ",visitable_agent_neighbours)
+
     if debug == 1:
         print("agent is at: ", xn, yn)
         print("cyberpac is at: ",x1,y1)
-    if abs(xn - x1) < 40 and abs(yn - y1) < 40:
+
+    if abs(xn - x1) < 40 and abs(yn - y1) < 20:
         print("AGENT COLLISION WITH CYBERPAC!!!")
         os.system('say "AGENT COLLISION WITH CYBERPAC!!!"')
     else:
         print("safe")
     #print("block color left: ",map[row][col-1])
     #enemy agent moves 4 times
-    for turn in range(len(options)):
+    options = ['a','d','w','s']
+    for turn in range(agent_turns):
         xnPrev=xn
         ynPrev=yn
         rand_index=rnd.randint(0, len(options) - 1)
         option=options[rand_index]
-        if debug == 1:
-            print("enemy agent to: ", option)
+        print(f" DEBUG> row = {row} col {col}")
+
+        stuck_log.append((row,col))
+
+        row, col = rollover_check(row, col,stuck_log)
         if option == "a":
             if map[row][col - 1] == "P":
                 xn -= cell_size
@@ -220,8 +262,39 @@ def move_agent(xn,yn):
         ffs.create_rectangle((xnPrev, ynPrev, xnPrev + cell_size, ynPrev + cell_size), fill="Green")
         #draw the agent
         cyberagent = ffs.create_oval(xn, yn, xn + pacman_size, yn + pacman_size, fill="red")
-
+    stuck_teleportation(row, col)
     return xn,yn
+
+#teleport the agents if they get stucks
+def rollover_check(row, col,stuck_log):
+    if col > ms - 1 or row > ms - 1:
+        col = col - 3
+        if map[row][col] == "P":
+            return col,row
+        if map[row][col + 1] == "P":
+            return col,row
+        if map[row - 1][col] == "P":
+            return col,row
+        if map[row + 1][col] == "P":
+            return col,row
+    return row, col
+
+def stuck_teleportation(row,col):
+    stuck = False
+    lt = map[row][col - 1]
+    rt = map[row][col + 1]
+    up = map[row + 1][col]
+    dn = map[row - 1][col]
+    """if debug == 1:
+        print(f"LEFT -> {lt}")
+        print(f"RIGHT -> {rt}")
+        print(f"UP -> {up}")
+        print(f"DOWN -> {dn}")
+    """
+    #determine if agent is stuck
+    if lt == 'w' and rt == 'w' and up == 'up' and down == 'dn':
+        print("agent is stuck!")
+    return stuck
 
 def move(event):
     global x1, y1
